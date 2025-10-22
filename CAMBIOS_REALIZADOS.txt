@@ -1,0 +1,252 @@
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║              ✅ PROYECTO ACTUALIZADO CORRECTAMENTE                           ║
+║                                                                              ║
+║           📊 Dashboard Horizonte Europa - Proyectos PM9                      ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+🔄 CAMBIOS REALIZADOS
+═══════════════════════════════════════════════════════════════════════════════
+
+## 1️⃣  NOTEBOOK DE PREPROCESADO - Completamente Rediseñado
+
+📍 Archivo: notebooks/01_preprocesado.ipynb
+
+✅ ADAPTACIONES ESPECÍFICAS PARA DATOS ADMINISTRATIVOS:
+
+   ✓ Clasificación correcta de variables según su función:
+     - Identificadores (Ref.CSIC, Ref.UE, Centro)
+     - Categóricas (situación, programa, Acción Clave)
+     - Búsqueda (Título, Nombre IP, Keywords, Resumen)
+     - Numéricas REALES (Concedido, Duración, CSIC, España)
+     - Temporales (Comienzo, Final)
+   
+   ✓ Eliminación de duplicados SOLO por Ref.CSIC (clave primaria)
+   
+   ✓ Normalización de nombres de centros:
+     - Usa código "Centro" como referencia
+     - Crea columna "nombre centro IP normalizado"
+     - Detecta y unifica variaciones de nombres/abreviaturas
+   
+   ✓ Conversión correcta de tipos:
+     - Ref.UE y Centro → STRING (no numéricas)
+     - Fechas → datetime
+     - Variables numéricas → int/float según corresponda
+   
+   ✓ IMPORTANTE: NO se eliminan valores nulos
+     (Son parte natural de datos administrativos)
+   
+   ✓ Variables derivadas creadas:
+     - Año Inicio, Mes Inicio, Año Fin
+     - Presupuesto Mensual
+     - Categoría Duración (Corto/Medio/Largo)
+     - Categoría Presupuesto (Pequeño/Medio/Grande/Muy Grande)
+   
+   ✓ Exportación automática de datos preprocesados:
+     - data/9PM_bootcamp_clean.csv
+     - data/9PM_bootcamp_clean.xlsx
+
+
+## 2️⃣  DASHBOARD STREAMLIT - Rediseñado Completamente
+
+📍 Archivo: app/dashboard.py
+
+✅ ENFOQUE: VISUALIZACIÓN + FILTRADO + BÚSQUEDA
+
+🎨 NUEVA ESTRUCTURA CON 5 TABS:
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │  📋 TAB 1: RESUMEN GENERAL                                      │
+   ├─────────────────────────────────────────────────────────────────┤
+   │  • 4 KPIs principales (Total proyectos, Presupuesto,           │
+   │    Duración media, Participación CSIC)                         │
+   │  • Distribución por situación (gráfico de pastel)              │
+   │  • Top 5 programas (gráfico de barras)                         │
+   │  • Evolución temporal de proyectos                             │
+   │  • Vista previa de datos en tabla                              │
+   └─────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │  🎯 TAB 2: ANÁLISIS POR PROGRAMA                                │
+   ├─────────────────────────────────────────────────────────────────┤
+   │  • Proyectos por programa (barras horizontales)                │
+   │  • Presupuesto por programa                                    │
+   │  • Distribución por Acción Clave (pastel top 10)               │
+   │  • Tabla resumen estadístico por programa                      │
+   └─────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │  💰 TAB 3: ANÁLISIS PRESUPUESTARIO                              │
+   ├─────────────────────────────────────────────────────────────────┤
+   │  • KPIs presupuestarios (Total, Media, Mediana, Máximo)       │
+   │  • Histograma de distribución                                  │
+   │  • Boxplot de presupuestos                                     │
+   │  • Presupuesto por año                                         │
+   │  • Top 10 proyectos por presupuesto                            │
+   └─────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │  🏛️ TAB 4: ANÁLISIS POR CENTROS                                │
+   ├─────────────────────────────────────────────────────────────────┤
+   │  • Top 15 centros por número de proyectos                      │
+   │  • Top 15 centros por presupuesto                              │
+   │  • Tabla resumen estadístico por centro                        │
+   │  • Usa "nombre centro IP normalizado" si está disponible       │
+   └─────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │  🔍 TAB 5: BÚSQUEDA AVANZADA                                    │
+   ├─────────────────────────────────────────────────────────────────┤
+   │  • Búsqueda por Ref.CSIC                                       │
+   │  • Búsqueda por Título (palabras clave)                        │
+   │  • Búsqueda por Investigador Principal                         │
+   │  • Búsqueda por Acrónimo                                       │
+   │  • Búsqueda por Programa                                       │
+   │  • Búsqueda por Centro                                         │
+   │  • Búsqueda por Keywords                                       │
+   │  • Búsqueda por Resumen (texto libre)                          │
+   │  • Descarga de resultados en CSV                               │
+   └─────────────────────────────────────────────────────────────────┘
+
+
+🎛️ SIDEBAR CON FILTROS INTERACTIVOS:
+
+   ✓ Filtro por Situación (dropdown)
+   ✓ Filtro por Programa (multiselect)
+   ✓ Filtro por Acción Clave (multiselect)
+   ✓ Filtro por Coordinador CSIC (dropdown)
+   ✓ Filtro por Centro (multiselect)
+   ✓ Filtro por Rango de Fechas (date picker)
+   ✓ Filtro por Rango de Presupuesto (slider)
+   
+   📊 Los gráficos se actualizan AUTOMÁTICAMENTE al aplicar filtros
+
+
+⚡ CARACTERÍSTICAS ESPECIALES:
+
+   ✓ Carga automática de datos preprocesados (si existen)
+   ✓ Fallback a datos originales si es necesario
+   ✓ Conversión automática de tipos de datos
+   ✓ Manejo correcto de strings en variables "numéricas"
+   ✓ Visualizaciones interactivas con Plotly
+   ✓ Descarga de resultados de búsqueda
+   ✓ Información de proyectos filtrados en tiempo real
+   ✓ Formato de números con separadores de miles
+   ✓ Manejo robusto de datos nulos
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 CÓMO USAR EL PROYECTO ACTUALIZADO
+═══════════════════════════════════════════════════════════════════════════════
+
+PASO 1: Preprocesar los datos
+─────────────────────────────────────────────────────────────────────
+
+    source venv/bin/activate
+    jupyter notebook notebooks/01_preprocesado.ipynb
+    
+    • Ejecutar TODAS las celdas del notebook
+    • Esto generará los archivos limpios en data/
+
+
+PASO 2: Ejecutar el Dashboard
+─────────────────────────────────────────────────────────────────────
+
+    cd app
+    streamlit run dashboard.py
+    
+    • Se abrirá automáticamente en el navegador
+    • Usa los filtros del sidebar para explorar
+    • Prueba la pestaña de Búsqueda Avanzada
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⚙️ CONFIGURACIÓN TÉCNICA
+═══════════════════════════════════════════════════════════════════════════════
+
+Variables Tratadas Correctamente:
+──────────────────────────────────
+
+✅ Ref.UE        → STRING (no numérica)
+✅ Centro        → STRING (no numérica)
+✅ Ref.CSIC      → Clave primaria (duplicados eliminados)
+✅ Concedido     → Float (presupuesto)
+✅ Duración      → Integer (meses)
+✅ Comienzo/Final → datetime
+✅ Situación     → Categórica
+✅ Programa      → Categórica
+✅ nombre centro IP → Normalizado
+
+
+Datos NO Eliminados:
+────────────────────────
+
+⚠️ Valores nulos → Preservados (datos administrativos)
+⚠️ Campos vacíos → Preservados (parte natural de la info)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 DIFERENCIAS CON VERSIÓN ANTERIOR
+═══════════════════════════════════════════════════════════════════════════════
+
+ANTES                               |  AHORA
+────────────────────────────────────|──────────────────────────────────────
+❌ Análisis estadístico avanzado    | ✅ Visualización y filtrado
+❌ Correlaciones complejas          | ✅ Distribuciones y frecuencias  
+❌ Variables numéricas incorrectas  | ✅ Tipos de datos correctos
+❌ Sin motor de búsqueda            | ✅ Búsqueda avanzada completa
+❌ Sin normalización de centros     | ✅ Centros normalizados
+❌ Eliminaba valores nulos          | ✅ Preserva datos administrativos
+❌ 4 tabs genéricos                 | ✅ 5 tabs especializados
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💡 RECOMENDACIONES DE USO
+═══════════════════════════════════════════════════════════════════════════════
+
+1. SIEMPRE ejecutar el notebook de preprocesado PRIMERO
+   (normaliza centros y crea variables derivadas)
+
+2. Usar FILTROS del sidebar para exploración general
+
+3. Usar BÚSQUEDA AVANZADA para encontrar proyectos específicos
+   - Por investigador
+   - Por centro
+   - Por palabras clave en título/resumen
+
+4. Descargar resultados de búsqueda como CSV cuando sea necesario
+
+5. Los gráficos son INTERACTIVOS (hover, zoom, pan)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📁 ARCHIVOS MODIFICADOS/CREADOS
+═══════════════════════════════════════════════════════════════════════════════
+
+MODIFICADOS:
+  📝 notebooks/01_preprocesado.ipynb  (rediseñado completamente)
+  📝 app/dashboard.py                 (reescrito desde cero)
+
+GENERADOS AL EJECUTAR PREPROCESADO:
+  📄 data/9PM_bootcamp_clean.csv
+  📄 data/9PM_bootcamp_clean.xlsx
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                            ✅ TODO LISTO PARA USAR
+═══════════════════════════════════════════════════════════════════════════════
+
+El dashboard ahora está optimizado para:
+  ✓ Datos administrativos de proyectos europeos
+  ✓ Visualización efectiva
+  ✓ Filtrado interactivo
+  ✓ Búsqueda avanzada
+  ✓ Análisis por programa, presupuesto y centros
+
