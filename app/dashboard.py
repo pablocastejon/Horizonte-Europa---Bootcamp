@@ -594,6 +594,94 @@ def show_search(df):
     Los campos vacíos serán ignorados en la búsqueda.
     """)
     
+    # BÚSQUEDA INTELIGENTE (destacada al principio)
+    st.subheader("🤖 Búsqueda Inteligente")
+    st.markdown("**Busca en múltiples campos simultáneamente**: Título, Acrónimo, Resumen, Keywords y más")
+    
+    with st.form("smart_search_form"):
+        busqueda_inteligente = st.text_input(
+            "Introduce términos de búsqueda",
+            placeholder="Ej: inteligencia artificial, sostenibilidad, energía renovable...",
+            help="Busca en: Título, Acrónimo del proyecto, Resumen, Keywords, Nombre Centro IP Normalizado"
+        )
+        
+        busqueda_inteligente_submitted = st.form_submit_button(
+            "🚀 Buscar en Todos los Campos", 
+            type="primary", 
+            use_container_width=True
+        )
+    
+    # Procesar búsqueda inteligente
+    if busqueda_inteligente_submitted and busqueda_inteligente:
+        df_result = df.copy()
+        
+        # Campos donde buscar
+        search_fields = ['Título', 'Acrónimo del proyecto', 'Resumen', 'Keywords', 'Nombre Centro IP Normalizado']
+        
+        # Crear máscara de búsqueda (OR entre todos los campos)
+        mask = pd.Series([False] * len(df_result), index=df_result.index)
+        
+        for field in search_fields:
+            if field in df_result.columns:
+                mask |= df_result[field].fillna('').astype(str).str.contains(
+                    busqueda_inteligente, 
+                    case=False, 
+                    na=False
+                )
+        
+        df_result = df_result[mask]
+        
+        # Mostrar resultados
+        st.success(f"✅ Se encontraron {len(df_result)} proyectos con '{busqueda_inteligente}'")
+        
+        if len(df_result) > 0:
+            # Mostrar en qué campos se encontró (información adicional)
+            with st.expander("📊 Ver estadísticas de búsqueda"):
+                matches_info = {}
+                for field in search_fields:
+                    if field in df_result.columns:
+                        matches = df_result[field].fillna('').astype(str).str.contains(
+                            busqueda_inteligente, 
+                            case=False, 
+                            na=False
+                        ).sum()
+                        if matches > 0:
+                            matches_info[field] = matches
+                
+                if matches_info:
+                    st.write("**Coincidencias por campo:**")
+                    for field, count in matches_info.items():
+                        st.write(f"- {field}: {count} proyectos")
+            
+            # Seleccionar columnas relevantes para mostrar
+            display_cols = []
+            for col in ['Ref.UE', 'Título', 'Acrónimo', 'Programa', 'Nombre Centro IP Normalizado', 
+                       'Nombre IP', 'Importe Concedido', 'Año Inicio', 'Area']:
+                if col in df_result.columns:
+                    display_cols.append(col)
+            
+            if not display_cols:
+                display_cols = df_result.columns.tolist()[:10]
+            
+            st.dataframe(df_result[display_cols], use_container_width=True, hide_index=True)
+            
+            # Opción de descarga
+            csv = df_result.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Descargar resultados (CSV)",
+                data=csv,
+                file_name=f"busqueda_inteligente_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv"
+            )
+        else:
+            st.warning("⚠️ No se encontraron proyectos con los términos especificados")
+        
+        st.markdown("---")
+    
+    # BÚSQUEDA AVANZADA (detallada, debajo)
+    st.subheader("🔎 Búsqueda Detallada por Campos")
+    st.markdown("Busca en campos específicos de forma individual")
+    
     # Formulario de búsqueda
     with st.form("search_form"):
         col1, col2 = st.columns(2)
