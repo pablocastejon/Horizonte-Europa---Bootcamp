@@ -3,8 +3,6 @@ Dashboard Interactivo - Proyectos Horizonte Europa
 ===================================================
 Dashboard de Streamlit para exploración, visualización y búsqueda de proyectos
 europeos del Programa Marco 9 (Horizonte Europa)
-
-Actualizado para trabajar con 9PM_bootcamp_clean.xlsx
 """
 
 import streamlit as st
@@ -73,7 +71,7 @@ def load_data():
         return df
     except Exception as e:
         st.error(f"❌ Error al cargar datos: {str(e)}")
-        st.error(f"Ruta intentada: {clean_xlsx if 'clean_xlsx' in locals() else 'No definida'}")
+        st.error(f"Ruta intentada: {clean_xlsx}")
         return None
 
 
@@ -200,19 +198,19 @@ def show_overview(df):
         st.metric("📊 Total Proyectos", f"{len(df):,}")
     
     with col2:
-        if 'Importe Concedido' in df.columns:
-            total_budget = df['Importe Concedido'].sum()
-            st.metric("💰 Presupuesto Total", f"{total_budget/1e6:.1f}M €")
+        if 'Concedido' in df.columns:
+            total_budget = df['Concedido'].sum()
+            st.metric("💰 Presupuesto Total", f"{total_budget:,.0f} €")
     
     with col3:
-        if 'Duración (meses)' in df.columns:
-            avg_duration = df['Duración (meses)'].mean()
+        if 'Duración(meses)' in df.columns:
+            avg_duration = df['Duración(meses)'].mean()
             st.metric("⏱️ Duración Media", f"{avg_duration:.1f} meses")
     
     with col4:
-        if 'Participantes CSIC' in df.columns:
-            total_csic = df['Participantes CSIC'].sum()
-            st.metric("🏛️ Participación CSIC", f"{int(total_csic)}")
+        if 'CSIC' in df.columns:
+            total_csic = df['CSIC'].sum()
+            st.metric("🏛️ Participación CSIC", f"{int(total_csic)} centros")
     
     st.divider()
     
@@ -220,41 +218,37 @@ def show_overview(df):
     col1, col2 = st.columns(2)
     
     with col1:
-        # Distribución por Situación
-        if 'Situación' in df.columns:
-            situacion_counts = df['Situación'].value_counts().reset_index()
-            situacion_counts.columns = ['Situación', 'count']
-            
+        # Distribución por situación
+        if 'situación' in df.columns:
             fig = px.pie(
-                situacion_counts,
+                df['situación'].value_counts().reset_index(),
                 values='count',
-                names='Situación',
+                names='situación',
                 title="📊 Distribución por Situación"
             )
             st.plotly_chart(fig, use_container_width=True)
     
     with col2:
-        # Top 5 Programas
-        if 'Programa' in df.columns:
-            top_programas = df['Programa'].value_counts().head(5).reset_index()
-            top_programas.columns = ['Programa', 'count']
-            
+        # Top 5 programas
+        if 'programa' in df.columns:
+            top_programas = df['programa'].value_counts().head(5).reset_index()
             fig = px.bar(
                 top_programas,
                 x='count',
-                y='Programa',
+                y='programa',
                 orientation='h',
                 title="🎯 Top 5 Programas",
-                labels={'count': 'Número de Proyectos', 'Programa': 'Programa'}
+                labels={'count': 'Número de Proyectos', 'programa': 'Programa'}
             )
             st.plotly_chart(fig, use_container_width=True)
     
     # Evolución temporal
-    if 'Año Inicio' in df.columns:
+    if 'Comienzo' in df.columns:
         st.subheader("📈 Evolución Temporal de Proyectos")
         
-        evolucion = df['Año Inicio'].value_counts().sort_index().reset_index()
-        evolucion.columns = ['Año', 'Número de Proyectos']
+        df_temp = df.copy()
+        df_temp['Año'] = df_temp['Comienzo'].dt.year
+        evolucion = df_temp.groupby('Año').size().reset_index(name='Número de Proyectos')
         
         fig = px.line(
             evolucion,
@@ -263,23 +257,7 @@ def show_overview(df):
             markers=True,
             title="Proyectos por Año de Inicio"
         )
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Distribución por Área Científica
-    if 'Area' in df.columns:
-        st.subheader("🔬 Distribución por Área Científica")
-        
-        area_counts = df['Area'].value_counts().reset_index()
-        area_counts.columns = ['Área', 'count']
-        
-        fig = px.bar(
-            area_counts,
-            x='count',
-            y='Área',
-            orientation='h',
-            title="Proyectos por Área Científica",
-            labels={'count': 'Número de Proyectos'}
-        )
+        fig.update_xaxes(dtick=1)
         st.plotly_chart(fig, use_container_width=True)
     
     # Tabla de datos
@@ -287,7 +265,7 @@ def show_overview(df):
     
     # Seleccionar columnas más relevantes para mostrar
     display_cols = []
-    for col in ['Ref.UE', 'Título', 'Programa', 'Situación', 'Importe Concedido', 'Año Inicio', 'Duración (meses)']:
+    for col in ['Ref.CSIC', 'Título', 'programa', 'situación', 'Concedido', 'Comienzo', 'Duración(meses)']:
         if col in df.columns:
             display_cols.append(col)
     
@@ -306,14 +284,14 @@ def show_program_analysis(df):
     
     with col1:
         # Distribución de proyectos por programa
-        if 'Programa' in df.columns:
-            programa_counts = df['Programa'].value_counts().reset_index()
-            programa_counts.columns = ['Programa', 'Número de Proyectos']
+        if 'programa' in df.columns:
+            programa_counts = df['programa'].value_counts().reset_index()
+            programa_counts.columns = ['programa', 'Número de Proyectos']
             
             fig = px.bar(
                 programa_counts,
                 x='Número de Proyectos',
-                y='Programa',
+                y='programa',
                 orientation='h',
                 title="Proyectos por Programa",
                 color='Número de Proyectos',
@@ -324,27 +302,26 @@ def show_program_analysis(df):
     
     with col2:
         # Presupuesto por programa
-        if 'Programa' in df.columns and 'Importe Concedido' in df.columns:
-            programa_budget = df.groupby('Programa')['Importe Concedido'].sum().sort_values(ascending=True).reset_index()
-            programa_budget['Importe Concedido (M€)'] = programa_budget['Importe Concedido'] / 1e6
+        if 'programa' in df.columns and 'Concedido' in df.columns:
+            programa_budget = df.groupby('programa')['Concedido'].sum().sort_values(ascending=True).reset_index()
             
             fig = px.bar(
                 programa_budget,
-                x='Importe Concedido (M€)',
-                y='Programa',
+                x='Concedido',
+                y='programa',
                 orientation='h',
-                title="Presupuesto Total por Programa (M€)",
-                color='Importe Concedido (M€)',
+                title="Presupuesto Total por Programa (€)",
+                color='Concedido',
                 color_continuous_scale='reds'
             )
             fig.update_layout(showlegend=False, height=600)
             st.plotly_chart(fig, use_container_width=True)
     
     # Análisis por Acción Clave
-    if 'Acción clave' in df.columns:
+    if 'Acción Clave' in df.columns:
         st.subheader("🔑 Distribución por Acción Clave")
         
-        accion_counts = df['Acción clave'].value_counts().head(10).reset_index()
+        accion_counts = df['Acción Clave'].value_counts().head(10).reset_index()
         accion_counts.columns = ['Acción Clave', 'Número de Proyectos']
         
         fig = px.pie(
@@ -355,37 +332,20 @@ def show_program_analysis(df):
         )
         st.plotly_chart(fig, use_container_width=True)
     
-    # Evolución temporal por programa
-    if 'Programa' in df.columns and 'Año Inicio' in df.columns:
-        st.subheader("📈 Evolución Temporal por Programa")
-        
-        evol_programa = df.groupby(['Año Inicio', 'Programa']).size().reset_index(name='Proyectos')
-        
-        fig = px.line(
-            evol_programa,
-            x='Año Inicio',
-            y='Proyectos',
-            color='Programa',
-            title="Evolución de Proyectos por Programa y Año",
-            markers=True
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    
     # Tabla resumen por programa
-    if 'Programa' in df.columns:
+    if 'programa' in df.columns:
         st.subheader("📊 Resumen Estadístico por Programa")
         
-        summary_data = {'Proyectos': df.groupby('Programa').size()}
+        summary_data = {'Proyectos': df.groupby('programa').size()}
         
-        if 'Importe Concedido' in df.columns:
-            summary_data['Presupuesto Total (M€)'] = df.groupby('Programa')['Importe Concedido'].sum() / 1e6
-            summary_data['Presupuesto Medio (€)'] = df.groupby('Programa')['Importe Concedido'].mean()
+        if 'Concedido' in df.columns:
+            summary_data['Presupuesto Total'] = df.groupby('programa')['Concedido'].sum()
+            summary_data['Presupuesto Medio'] = df.groupby('programa')['Concedido'].mean()
         
-        if 'Duración (meses)' in df.columns:
-            summary_data['Duración Media (meses)'] = df.groupby('Programa')['Duración (meses)'].mean()
+        if 'Duración(meses)' in df.columns:
+            summary_data['Duración Media (meses)'] = df.groupby('programa')['Duración(meses)'].mean()
         
         summary = pd.DataFrame(summary_data).round(2)
-        summary = summary.sort_values('Proyectos', ascending=False)
         st.dataframe(summary, use_container_width=True)
 
 
@@ -394,31 +354,28 @@ def show_budget_analysis(df):
     """Análisis del presupuesto concedido"""
     st.header("💰 Análisis Presupuestario")
     
-    if 'Importe Concedido' not in df.columns:
-        st.warning("⚠️ No se encontró la columna 'Importe Concedido'")
+    if 'Concedido' not in df.columns:
+        st.warning("⚠️ No se encontró la columna 'Concedido'")
         return
-    
-    # Filtrar datos válidos
-    df_budget = df[df['Importe Concedido'].notna() & (df['Importe Concedido'] > 0)].copy()
     
     # KPIs presupuestarios
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        total = df_budget['Importe Concedido'].sum()
-        st.metric("💰 Total", f"{total/1e6:.1f}M €")
+        total = df['Concedido'].sum()
+        st.metric("💰 Total", f"{total:,.0f} €")
     
     with col2:
-        media = df_budget['Importe Concedido'].mean()
+        media = df['Concedido'].mean()
         st.metric("📊 Media", f"{media:,.0f} €")
     
     with col3:
-        mediana = df_budget['Importe Concedido'].median()
+        mediana = df['Concedido'].median()
         st.metric("📈 Mediana", f"{mediana:,.0f} €")
     
     with col4:
-        maximo = df_budget['Importe Concedido'].max()
-        st.metric("🔝 Máximo", f"{maximo/1e6:.2f}M €")
+        maximo = df['Concedido'].max()
+        st.metric("🔝 Máximo", f"{maximo:,.0f} €")
     
     st.divider()
     
@@ -427,69 +384,53 @@ def show_budget_analysis(df):
     with col1:
         # Distribución del presupuesto
         fig = px.histogram(
-            df_budget,
-            x='Importe Concedido',
+            df,
+            x='Concedido',
             nbins=50,
             title="Distribución del Presupuesto Concedido",
-            labels={'Importe Concedido': 'Presupuesto (€)'}
+            labels={'Concedido': 'Presupuesto (€)'}
         )
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
         # Boxplot
         fig = px.box(
-            df_budget,
-            y='Importe Concedido',
+            df,
+            y='Concedido',
             title="Análisis de Distribución (Boxplot)",
-            labels={'Importe Concedido': 'Presupuesto (€)'}
+            labels={'Concedido': 'Presupuesto (€)'}
         )
         st.plotly_chart(fig, use_container_width=True)
     
     # Presupuesto por año
-    if 'Año Inicio' in df_budget.columns:
+    if 'Comienzo' in df.columns:
         st.subheader("📅 Presupuesto por Año de Inicio")
         
-        budget_year = df_budget.groupby('Año Inicio')['Importe Concedido'].sum().reset_index()
-        budget_year['Importe Concedido (M€)'] = budget_year['Importe Concedido'] / 1e6
+        df_temp = df.copy()
+        df_temp['Año'] = df_temp['Comienzo'].dt.year
+        budget_year = df_temp.groupby('Año')['Concedido'].sum().reset_index()
         
         fig = px.bar(
             budget_year,
-            x='Año Inicio',
-            y='Importe Concedido (M€)',
-            title="Presupuesto Total por Año (M€)",
-            labels={'Importe Concedido (M€)': 'Presupuesto (M€)', 'Año Inicio': 'Año'}
+            x='Año',
+            y='Concedido',
+            title="Presupuesto Total por Año",
+            labels={'Concedido': 'Presupuesto (€)', 'Año': 'Año'}
         )
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Presupuesto por Área Científica
-    if 'Area' in df_budget.columns:
-        st.subheader("🔬 Presupuesto por Área Científica")
-        
-        budget_area = df_budget.groupby('Area')['Importe Concedido'].sum().sort_values(ascending=False).reset_index()
-        budget_area['Importe Concedido (M€)'] = budget_area['Importe Concedido'] / 1e6
-        
-        fig = px.bar(
-            budget_area,
-            x='Importe Concedido (M€)',
-            y='Area',
-            orientation='h',
-            title="Presupuesto Total por Área Científica (M€)"
-        )
+        fig.update_xaxes(dtick=1)
         st.plotly_chart(fig, use_container_width=True)
     
     # Top proyectos por presupuesto
     st.subheader("🏆 Top 10 Proyectos por Presupuesto")
     
-    cols_to_show = ['Ref.UE', 'Título', 'Programa', 'Importe Concedido']
-    if 'Duración (meses)' in df_budget.columns:
-        cols_to_show.append('Duración (meses)')
-    if 'Nombre Centro IP Normalizado' in df_budget.columns:
-        cols_to_show.append('Nombre Centro IP Normalizado')
+    cols_to_show = ['Ref.CSIC', 'Título', 'programa', 'Concedido']
+    if 'Duración(meses)' in df.columns:
+        cols_to_show.append('Duración(meses)')
     
-    available_cols = [col for col in cols_to_show if col in df_budget.columns]
+    available_cols = [col for col in cols_to_show if col in df.columns]
     
     if available_cols:
-        top_projects = df_budget.nlargest(10, 'Importe Concedido')[available_cols]
+        top_projects = df.nlargest(10, 'Concedido')[available_cols]
         st.dataframe(top_projects, use_container_width=True, hide_index=True)
 
 
@@ -499,9 +440,9 @@ def show_center_analysis(df):
     st.header("🏛️ Análisis por Centros")
     
     # Seleccionar columna de centro a usar
-    centro_col = 'Nombre Centro IP Normalizado' if 'Nombre Centro IP Normalizado' in df.columns else None
+    centro_col = 'nombre centro IP normalizado' if 'nombre centro IP normalizado' in df.columns else 'nombre centro IP'
     
-    if not centro_col or centro_col not in df.columns:
+    if centro_col not in df.columns:
         st.warning("⚠️ No se encontró información de centros")
         return
     
@@ -527,56 +468,36 @@ def show_center_analysis(df):
     
     with col2:
         # Top centros por presupuesto
-        if 'Importe Concedido' in df.columns:
+        if 'Concedido' in df.columns:
             st.subheader("💰 Top 15 Centros por Presupuesto")
             
-            centro_budget = df.groupby(centro_col)['Importe Concedido'].sum().sort_values(ascending=False).head(15).reset_index()
+            centro_budget = df.groupby(centro_col)['Concedido'].sum().sort_values(ascending=False).head(15).reset_index()
             centro_budget.columns = ['Centro', 'Presupuesto']
-            centro_budget['Presupuesto (M€)'] = centro_budget['Presupuesto'] / 1e6
             
             fig = px.bar(
                 centro_budget,
-                x='Presupuesto (M€)',
+                x='Presupuesto',
                 y='Centro',
                 orientation='h',
-                color='Presupuesto (M€)',
+                color='Presupuesto',
                 color_continuous_scale='greens'
             )
             fig.update_layout(showlegend=False, height=600)
             st.plotly_chart(fig, use_container_width=True)
     
-    # Distribución temporal por centro (top 5)
-    if 'Año Inicio' in df.columns:
-        st.subheader("📈 Evolución Temporal - Top 5 Centros")
-        
-        top5_centers = df[centro_col].value_counts().head(5).index.tolist()
-        df_top5 = df[df[centro_col].isin(top5_centers)]
-        
-        evol_centro = df_top5.groupby(['Año Inicio', centro_col]).size().reset_index(name='Proyectos')
-        
-        fig = px.line(
-            evol_centro,
-            x='Año Inicio',
-            y='Proyectos',
-            color=centro_col,
-            title="Evolución de Proyectos - Top 5 Centros",
-            markers=True
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    
     # Tabla resumen por centro
-    st.subheader("📋 Resumen Estadístico por Centro (Top 20)")
+    st.subheader("📋 Resumen Estadístico por Centro")
     
     summary_data = {
         'Proyectos': df.groupby(centro_col).size(),
     }
     
-    if 'Importe Concedido' in df.columns:
-        summary_data['Presupuesto Total (M€)'] = df.groupby(centro_col)['Importe Concedido'].sum() / 1e6
-        summary_data['Presupuesto Medio (€)'] = df.groupby(centro_col)['Importe Concedido'].mean()
+    if 'Concedido' in df.columns:
+        summary_data['Presupuesto Total'] = df.groupby(centro_col)['Concedido'].sum()
+        summary_data['Presupuesto Medio'] = df.groupby(centro_col)['Concedido'].mean()
     
-    if 'Participantes CSIC' in df.columns:
-        summary_data['Participantes CSIC'] = df.groupby(centro_col)['Participantes CSIC'].sum()
+    if 'Coordinador CSIC' in df.columns:
+        summary_data['Como Coordinador'] = df[df['Coordinador CSIC'] == 'Sí'].groupby(centro_col).size()
     
     summary = pd.DataFrame(summary_data).fillna(0)
     summary = summary.sort_values('Proyectos', ascending=False).head(20)
@@ -599,8 +520,8 @@ def show_search(df):
         col1, col2 = st.columns(2)
         
         with col1:
-            # Búsqueda por Ref.UE
-            ref_ue = st.text_input("📌 Ref.UE", placeholder="Ej: 101012345")
+            # Búsqueda por Ref.CSIC
+            ref_csic = st.text_input("📌 Ref.CSIC", placeholder="Ej: 202212345")
             
             # Búsqueda por título
             titulo = st.text_input("📝 Título del Proyecto", placeholder="Palabras clave en el título")
@@ -612,21 +533,21 @@ def show_search(df):
                 investigador = None
             
             # Búsqueda por acrónimo
-            if 'Acrónimo' in df.columns:
+            if 'Acrónimo del proyecto' in df.columns:
                 acronimo = st.text_input("🔤 Acrónimo", placeholder="Ej: HORIZON")
             else:
                 acronimo = None
         
         with col2:
             # Búsqueda por programa
-            if 'Programa' in df.columns:
-                programas_busqueda = ['Todos'] + sorted(df['Programa'].dropna().unique().tolist())
+            if 'programa' in df.columns:
+                programas_busqueda = ['Todos'] + sorted(df['programa'].dropna().unique().tolist())
                 programa_busqueda = st.selectbox("🎯 Programa", programas_busqueda)
             else:
                 programa_busqueda = None
             
             # Búsqueda por centro
-            centro_col = 'Nombre Centro IP Normalizado'
+            centro_col = 'nombre centro IP normalizado' if 'nombre centro IP normalizado' in df.columns else 'nombre centro IP'
             if centro_col in df.columns:
                 centros_busqueda = ['Todos'] + sorted(df[centro_col].dropna().unique().tolist())
                 centro_busqueda = st.selectbox("🏢 Centro", centros_busqueda)
@@ -639,12 +560,11 @@ def show_search(df):
             else:
                 keywords = None
             
-            # Búsqueda por área científica
-            if 'Area' in df.columns:
-                areas_busqueda = ['Todos'] + sorted(df['Area'].dropna().unique().tolist())
-                area_busqueda = st.selectbox("🔬 Área Científica", areas_busqueda)
+            # Búsqueda por resumen
+            if 'Resumen' in df.columns:
+                resumen = st.text_input("📄 Resumen", placeholder="Palabras en el resumen")
             else:
-                area_busqueda = None
+                resumen = None
         
         submitted = st.form_submit_button("🔍 Buscar", type="primary", use_container_width=True)
     
@@ -653,8 +573,8 @@ def show_search(df):
         df_result = df.copy()
         
         # Aplicar filtros de búsqueda
-        if ref_ue and 'Ref.UE' in df_result.columns:
-            df_result = df_result[df_result['Ref.UE'].astype(str).str.contains(ref_ue, case=False, na=False)]
+        if ref_csic and 'Ref.CSIC' in df_result.columns:
+            df_result = df_result[df_result['Ref.CSIC'].astype(str).str.contains(ref_csic, case=False, na=False)]
         
         if titulo and 'Título' in df_result.columns:
             df_result = df_result[df_result['Título'].str.contains(titulo, case=False, na=False)]
@@ -662,11 +582,11 @@ def show_search(df):
         if investigador and 'Nombre IP' in df_result.columns:
             df_result = df_result[df_result['Nombre IP'].str.contains(investigador, case=False, na=False)]
         
-        if acronimo and 'Acrónimo' in df_result.columns:
-            df_result = df_result[df_result['Acrónimo'].str.contains(acronimo, case=False, na=False)]
+        if acronimo and 'Acrónimo del proyecto' in df_result.columns:
+            df_result = df_result[df_result['Acrónimo del proyecto'].str.contains(acronimo, case=False, na=False)]
         
-        if programa_busqueda and programa_busqueda != 'Todos' and 'Programa' in df_result.columns:
-            df_result = df_result[df_result['Programa'] == programa_busqueda]
+        if programa_busqueda and programa_busqueda != 'Todos' and 'programa' in df_result.columns:
+            df_result = df_result[df_result['programa'] == programa_busqueda]
         
         if centro_busqueda and centro_busqueda != 'Todos' and centro_col in df_result.columns:
             df_result = df_result[df_result[centro_col] == centro_busqueda]
@@ -674,8 +594,8 @@ def show_search(df):
         if keywords and 'Keywords' in df_result.columns:
             df_result = df_result[df_result['Keywords'].str.contains(keywords, case=False, na=False)]
         
-        if area_busqueda and area_busqueda != 'Todos' and 'Area' in df_result.columns:
-            df_result = df_result[df_result['Area'] == area_busqueda]
+        if resumen and 'Resumen' in df_result.columns:
+            df_result = df_result[df_result['Resumen'].str.contains(resumen, case=False, na=False)]
         
         # Mostrar resultados
         st.success(f"✅ Se encontraron {len(df_result)} proyectos")
@@ -683,8 +603,7 @@ def show_search(df):
         if len(df_result) > 0:
             # Seleccionar columnas relevantes para mostrar
             display_cols = []
-            for col in ['Ref.UE', 'Título', 'Programa', 'Nombre Centro IP Normalizado', 'Nombre IP', 
-                       'Importe Concedido', 'Año Inicio', 'Area']:
+            for col in ['Ref.CSIC', 'Título', 'programa', 'nombre centro IP', 'Nombre IP', 'Concedido', 'Comienzo']:
                 if col in df_result.columns:
                     display_cols.append(col)
             
@@ -726,22 +645,22 @@ def main():
     
     # Aplicar filtros (excluyendo filtros especiales)
     filters_to_apply = {k: v for k, v in filters.items() 
-                        if k not in ['año_inicio_min', 'año_inicio_max', 'presupuesto_min', 'presupuesto_max']}
+                        if k not in ['fecha_inicio', 'fecha_fin', 'presupuesto_min', 'presupuesto_max']}
     
     df_filtered = apply_filters(df, filters_to_apply)
     
-    # Aplicar filtros de año
-    if 'año_inicio_min' in filters and 'año_inicio_max' in filters and 'Año Inicio' in df_filtered.columns:
+    # Aplicar filtros de fecha
+    if 'fecha_inicio' in filters and 'fecha_fin' in filters and 'Comienzo' in df_filtered.columns:
         df_filtered = df_filtered[
-            (df_filtered['Año Inicio'] >= filters['año_inicio_min']) &
-            (df_filtered['Año Inicio'] <= filters['año_inicio_max'])
+            (df_filtered['Comienzo'].dt.date >= filters['fecha_inicio']) &
+            (df_filtered['Comienzo'].dt.date <= filters['fecha_fin'])
         ]
     
     # Aplicar filtros de presupuesto
-    if 'presupuesto_min' in filters and 'presupuesto_max' in filters and 'Importe Concedido' in df_filtered.columns:
+    if 'presupuesto_min' in filters and 'presupuesto_max' in filters and 'Concedido' in df_filtered.columns:
         df_filtered = df_filtered[
-            (df_filtered['Importe Concedido'] >= filters['presupuesto_min']) &
-            (df_filtered['Importe Concedido'] <= filters['presupuesto_max'])
+            (df_filtered['Concedido'] >= filters['presupuesto_min']) &
+            (df_filtered['Concedido'] <= filters['presupuesto_max'])
         ]
     
     # Mostrar número de proyectos filtrados
