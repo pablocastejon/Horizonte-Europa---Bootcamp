@@ -47,7 +47,6 @@ Las variables se clasificaron según su función administrativa:
 #### 🔹 **Identificadores** (códigos únicos)
 - `Ref.CSIC` ← Clave primaria
 - `Ref.UE` 
-- `Centro`
 - `Acrónimo del proyecto`
 
 #### 🔹 **Categóricas** (valores discretos)
@@ -56,6 +55,7 @@ Las variables se clasificaron según su función administrativa:
 - `Acción clave`
 - `Convocatoria`
 - `Cód.área`
+- `Centro`
 - `Nombre Centro IP`
 
 #### 🔹 **Descriptivas** (texto libre)
